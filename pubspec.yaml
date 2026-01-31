@@ -1,0 +1,77 @@
+name: krishi_mitra
+description: AI-powered agriculture assistant mobile app
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # HTTP & API
+  http: ^1.1.0
+  
+  # State Management
+  provider: ^6.1.1
+  
+  # Local Storage
+  shared_preferences: ^2.2.2
+  
+  # Localization
+  intl: ^0.20.2
+  
+  # Location Services
+  geolocator: ^10.1.0
+  
+  # Image Handling
+  image_picker: ^1.0.7
+  cached_network_image: ^3.3.0
+  
+  # UI Components
+  flutter_svg: ^2.0.9
+  # carousel_slider: ^4.2.1  # Conflicts with Flutter's built-in carousel
+  
+  # Icons
+  cupertino_icons: ^1.0.2
+  google_fonts: ^8.0.0
+  
+  # Notifications & Background Tasks
+  flutter_local_notifications: ^17.0.0
+  timezone: ^0.9.0
+  permission_handler: ^11.0.1
+  
+  # Environment Variables
+  flutter_dotenv: ^5.1.0
+  
+  # OCR
+  google_mlkit_text_recognition: ^0.11.0
+  
+  # AI Integration
+  google_generative_ai: ^0.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+  
+  
+  assets:
+    - .env
+    - assets/icons/crops/
+    - assets/icons/
+    - assets/images/
+  
+  # fonts:
+  #   - family: Roboto
+  #     fonts:
+  #       - asset: fonts/Roboto-Regular.ttf
+  #       - asset: fonts/Roboto-Bold.ttf
+  #         weight: 700
