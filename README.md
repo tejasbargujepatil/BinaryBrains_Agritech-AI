@@ -27,6 +27,9 @@ Detailed documentation for each component is available in the `docs/` directory:
 
 - [**Frontend Guide**](docs/FRONTEND_GUIDE.md): Setup and architecture of the Flutter App.
 - [**Backend Guide**](docs/BACKEND_GUIDE.md): Deployment and API reference for the Python Backend.
+- [**User Manual**](docs/USER_MANUAL.md): Guide for farmers on how to use the app.
+- [**Architecture**](docs/ARCHITECTURE.md): Deep dive into the system design and multi-agent system.
+- [**Contributing**](docs/CONTRIBUTING.md): Guidelines for developers.
 
 ---
 
