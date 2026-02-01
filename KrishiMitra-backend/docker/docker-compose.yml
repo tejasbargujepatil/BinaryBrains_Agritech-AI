@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: krishimitra_db
+    environment:
+      POSTGRES_DB: krishimitra
+      POSTGRES_USER: krishimitra_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-krishimitra_password_2024}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U krishimitra_user" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - krishimitra_network
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: krishimitra_backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://krishimitra_user:${DB_PASSWORD:-krishimitra_password_2024}@db:5432/krishimitra
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      FLASK_ENV: production
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-in-production}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-jwt-secret-change-in-production}
+    ports:
+      - "8002:8002"
+    volumes:
+      - ../app:/app/app
+      - upload_data:/app/uploads
+    restart: unless-stopped
+    networks:
+      - krishimitra_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8002/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+  upload_data:
+
+
+networks:
+  krishimitra_network:
+    driver: bridge

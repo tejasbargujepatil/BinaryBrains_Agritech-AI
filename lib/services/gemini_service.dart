@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 import '../config/apiconfig.dart';
 import '../config/app_config.dart';
 import '../models/fertilizer_recommendation.dart';
@@ -30,7 +31,24 @@ class GeminiService {
     required int potassium,
     String? location,
     String? cropType,
+    String? token,  // For backend authentication
   }) async {
+    // Try backend first if configured
+    if (ApiConfig.useBackendForFertilizers && token != null) {
+      try {
+        return await _searchFertilizersViaBackend(
+          nitrogen: nitrogen,
+          phosphorus: phosphorus,
+          potassium: potassium,
+          token: token,
+        );
+      } catch (e) {
+        print('Backend request failed, falling back to direct Gemini: $e');
+        // Fall through to direct Gemini call
+      }
+    }
+
+    // Fallback to direct Gemini call
     try {
       final model = _getModel();
       
@@ -54,6 +72,51 @@ class GeminiService {
       print('Gemini AI Error: $e');
       // Fallback to demo data only on error
       print('⚠️ Falling back to demo data due to error');
+      return _getDemoRecommendations();
+    }
+  }
+
+  /// Search fertilizers via backend API
+  static Future<FertilizerAnalysisResponse> _searchFertilizersViaBackend({
+    required int nitrogen,
+    required int phosphorus,
+    required int potassium,
+    required String token,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.backendBaseUrl}/fertilization/alternatives'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'npk': {'n': nitrogen, 'p': phosphorus, 'k': potassium},
+        'current_brand': 'Unknown',
+        'current_price': 0,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      // Backend returns the agent's output
+      return _parseBackendResponse(data);
+    } else {
+      throw Exception('Backend API error: ${response.statusCode}');
+    }
+  }
+
+  /// Parse backend response
+  static FertilizerAnalysisResponse _parseBackendResponse(Map<String, dynamic> data) {
+    try {
+      // Backend returns: {"cheaper_alternatives": [...], "analysis": {...}}
+      if (data.containsKey('cheaper_alternatives')) {
+        final alternatives = data['cheaper_alternatives'];
+        return FertilizerAnalysisResponse.fromJson(alternatives);
+      } else {
+        throw Exception('Invalid backend response format');
+      }
+    } catch (e) {
+      print('Error parsing backend response: $e');
       return _getDemoRecommendations();
     }
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import 'fertilizer_comparison_screen.dart';
+import 'crop_price_comparison_screen.dart';
 
 class MarketplaceScreen extends StatefulWidget {
   const MarketplaceScreen({super.key});
@@ -52,7 +53,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
         controller: _tabController,
         children: const [
           FertilizerComparisonScreen(),
-          _ComingSoonTab(title: 'Products'),
+          CropPriceComparisonScreen(), // ✨ New!
           _ComingSoonTab(title: 'Equipment'),
         ],
       ),

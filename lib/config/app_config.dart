@@ -2,7 +2,7 @@
 class AppConfig {
   // Set to true to use dummy data (for testing UI without backend)
   // Set to false to use real API calls
-  static const bool isDemoMode = true;
+  static const bool isDemoMode = false;
   
   // Demo user credentials
   static const String demoMobileNumber = '7972720204';

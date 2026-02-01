@@ -4,6 +4,10 @@ import '../../config/app_theme.dart';
 import '../../widgets/charts.dart';
 import '../../services/agent_service.dart';
 import '../../models/agent_plan_model.dart';
+import '../../services/crop_service.dart';
+import '../../services/weather_service.dart';
+import '../../services/soil_service.dart';
+import 'dart:convert';
 
 class CropAgentDashboard extends StatefulWidget {
   final String cropId;
@@ -25,26 +29,74 @@ class _CropAgentDashboardState extends State<CropAgentDashboard> {
   }
 
   Future<void> _loadAgentPlan() async {
-    setState(() => _isLoading = true);
+    // 1. Try to load cached plan first for immediate display
+    try {
+      final cachedPlan = await AgentService.getCachedSmartPlan(widget.cropId);
+      if (cachedPlan != null && mounted) {
+        setState(() {
+          _agentPlan = cachedPlan;
+          // Don't set isLoading false yet if we want to show a spinner indicating refresh, 
+          // or set it false and let the refresh happen silently.
+          // Let's set it false to show data, and maybe show a small loading indicator elsewhere.
+          _isLoading = false; 
+        });
+      }
+    } catch (e) {
+      print('DEBUG: Cache load error: $e');
+    }
 
-    final result = await AgentService.getAgentPlan(widget.cropId);
-    if (result['success']) {
-      setState(() {
-        _agentPlan = result['plan'];
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
+    if (_agentPlan == null) {
+      setState(() => _isLoading = true);
+    }
+    
+    try {
+      // 2. Fetch Fresh Data (Background Refresh)
+      final cropResult = await CropService.getCropDetails(widget.cropId);
+      if (!cropResult['success']) {
+        throw Exception(cropResult['error']);
+      }
+      final cropName = cropResult['crop'].cropName;
+      final location = "Pune, Maharashtra"; // Fallback
+
+      final weatherResult = await WeatherService.getUserWeather();
+      final soilResult = await SoilService.getUserSoilData();
+
+      final result = await AgentService.generateSmartPlan(
+        cropName: cropName,
+        location: location,
+        weatherData: weatherResult['success'] ? weatherResult['weather'].toJson() : {},
+        soilData: soilResult['success'] ? soilResult['soil'].toJson() : {},
+        cropId: widget.cropId, // Pass ID for caching
+      );
+
+      if (result['success']) {
+        if (mounted) {
+          setState(() {
+            _agentPlan = result['plan'];
+            _isLoading = false;
+          });
+        }
+      } else {
+        throw Exception(result['error']);
+      }
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['error'] ?? 'Failed to load plan'),
-            backgroundColor: AppTheme.error,
-          ),
-        );
+        // Only show error screen if we have absolutely nothing
+        if (_agentPlan == null) {
+           setState(() => _isLoading = false);
+           ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('AI Generation Failed: ${e.toString()}'),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+        } else {
+           print("DEBUG: Background refresh failed: $e");
+        }
       }
     }
   }
+
 
   Widget _buildModernSection({
     required String title,
@@ -203,9 +255,9 @@ class _CropAgentDashboardState extends State<CropAgentDashboard> {
                       // Score indicator
                       LinearProgressBar(
                         label: 'Suitability Score',
-                        percentage: double.parse(
-                          _agentPlan!.suitability.suitabilityScore.replaceAll('%', ''),
-                        ),
+                        percentage: double.tryParse(
+                          _agentPlan!.suitability.suitabilityScore.replaceAll(RegExp(r'[^0-9.]'), ''),
+                        ) ?? 0.0,
                       ),
                       const SizedBox(height: AppTheme.spacingMd),
                       _buildInfoRow(

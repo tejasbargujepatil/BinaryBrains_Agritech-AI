@@ -26,9 +26,15 @@ class CropModel {
   });
   
   factory CropModel.fromJson(Map<String, dynamic> json) {
+    // Helper to convert ID (which might be int from backend) to String
+    String convertId(dynamic value) {
+      if (value == null) return '';
+      return value.toString();
+    }
+    
     return CropModel(
-      id: json['id'] ?? json['_id'] ?? '',
-      userId: json['userId'] ?? json['user_id'] ?? '',
+      id: convertId(json['id'] ?? json['_id']),
+      userId: convertId(json['userId'] ?? json['user_id']),
       cropName: json['cropName'] ?? json['crop_name'] ?? '',
       sowingDate: json['sowingDate'] != null 
           ? DateTime.parse(json['sowingDate']) 

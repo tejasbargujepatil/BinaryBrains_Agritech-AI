@@ -39,7 +39,8 @@ class AgentPlanModel {
       cropId: json['cropId'] ?? '',
       suitability: SuitabilitySection.fromJson(json['suitability'] ?? {}),
       governmentSchemes: (json['governmentSchemes'] as List?)
-          ?.map((e) => GovernmentScheme.fromJson(e))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => GovernmentScheme.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
       sowingPlan: SowingPlanSection.fromJson(json['sowingPlan'] ?? {}),
       fertilization: FertilizationSection.fromJson(json['fertilization'] ?? {}),
@@ -49,16 +50,146 @@ class AgentPlanModel {
       residue: ResidueSection.fromJson(json['residue'] ?? {}),
       storage: StorageSection.fromJson(json['storage'] ?? {}),
       valueAddedProducts: (json['valueAddedProducts'] as List?)
-          ?.map((e) => ValueAddedProduct.fromJson(e))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => ValueAddedProduct.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
       directSelling: DirectSellingSection.fromJson(json['directSelling'] ?? {}),
       alliedBusinessIdeas: (json['alliedBusinessIdeas'] as List?)
-          ?.map((e) => AlliedBusiness.fromJson(e))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => AlliedBusiness.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
       fertilizerCost: FertilizerCostSection.fromJson(json['fertilizerCost'] ?? {}),
       lastUpdated: json['lastUpdated'] != null 
           ? DateTime.parse(json['lastUpdated']) 
           : DateTime.now(),
+    );
+  }
+
+  // Adapter for new Rule-Based Backend Response
+  factory AgentPlanModel.fromBackendResponse(Map<String, dynamic> data) {
+    final cropPlanning = data['crop_planning'] is Map ? data['crop_planning'] as Map<String, dynamic> : <String, dynamic>{};
+    final fertilization = data['fertilization'] is Map ? data['fertilization'] as Map<String, dynamic> : <String, dynamic>{};
+    final irrigation = data['irrigation'] is Map ? data['irrigation'] as Map<String, dynamic> : <String, dynamic>{};
+    final disease = data['disease_analysis'] is Map ? data['disease_analysis'] as Map<String, dynamic> : <String, dynamic>{};
+    final harvest = data['harvest_prediction'] is Map ? data['harvest_prediction'] as Map<String, dynamic> : <String, dynamic>{};
+    final price = data['price_analysis'] is Map ? data['price_analysis'] as Map<String, dynamic> : <String, dynamic>{};
+    final summary = data['overall_summary']?.toString() ?? '';
+
+    // EXTRACT SUITABILITY from crop_planning
+    final recommendedCrops = (cropPlanning['recommended_crops'] is List) ? (cropPlanning['recommended_crops'] as List) : [];
+    String score = 'N/A';
+    List<String> recommendations = [];
+    if (recommendedCrops.isNotEmpty) {
+      final firstCrop = recommendedCrops[0];
+      if (firstCrop is Map) {
+         score = "${firstCrop['suitability_score']}%";
+         recommendations.add(firstCrop['reasoning']?.toString() ?? '');
+      }
+    }
+    if (summary.isNotEmpty) {
+      recommendations.insert(0, summary);
+    }
+    
+    // Safety check for seasons map
+    final seasonalCalendar = cropPlanning['seasonal_calendar'] is Map ? cropPlanning['seasonal_calendar'] as Map<String, dynamic> : <String, dynamic>{};
+
+    return AgentPlanModel(
+      cropId: data['crop']?.toString() ?? '',
+      suitability: SuitabilitySection(
+        isSuitable: true, 
+        suitabilityScore: score,
+        soilValidation: "Consider soil testing for better accuracy", 
+        recommendations: recommendations,
+      ),
+      governmentSchemes: [], 
+      sowingPlan: SowingPlanSection(
+        bestSowingWindow: seasonalCalendar['sowing_window']?.toString() ?? 'Check local advisory',
+        weatherConsiderations: "Check forecast before sowing",
+        tips: ["Use certified seeds"],
+      ),
+      fertilization: _mapFertilization(fertilization),
+      irrigation: _mapIrrigation(irrigation),
+      disease: _mapDisease(disease),
+      harvest: _mapHarvest(harvest),
+      residue: ResidueSection(utilizationMethods: ["Composting"], environmentalImpact: "Low"),
+      storage: _mapStorage(price),
+      valueAddedProducts: [], 
+      directSelling: DirectSellingSection(platforms: [], tips: ["Sell directly at farm gate"]),
+      alliedBusinessIdeas: [],
+      fertilizerCost: FertilizerCostSection(comparison: [], recommendations: "Use generic fertilizers"),
+      lastUpdated: DateTime.now(),
+    );
+  }
+
+  static FertilizationSection _mapFertilization(Map<String, dynamic> fertData) {
+    List<FertilizerApplication> schedule = [];
+    final rawSchedule = fertData['fertilization_schedule'] as List?;
+    if (rawSchedule != null) {
+      for (var stage in rawSchedule) {
+        // Handle list of fertilizers in stage
+        final ferts = stage['fertilizers'] as List?;
+        String fertStr = "Mixed";
+        String qtyStr = "";
+        if (ferts != null && ferts.isNotEmpty) {
+          fertStr = ferts.map((f) => f['name']).join(' + ');
+          qtyStr = ferts.map((f) => "${f['quantity_per_acre']} ${f['unit']}").join(' + ');
+        }
+        
+        schedule.add(FertilizerApplication(
+          stage: stage['stage'] ?? '',
+          fertilizer: fertStr,
+          quantity: qtyStr,
+          method: "Broadcasting", // Default
+        ));
+      }
+    }
+    return FertilizationSection(schedule: schedule, lowCostAlternatives: []);
+  }
+
+  static IrrigationScheduleSection _mapIrrigation(Map<String, dynamic> irrData) {
+    List<IrrigationStage> schedule = [];
+    final rawSchedule = irrData['daily_schedule'] as List?; // Wait, irrigation agent returns map or list? 
+    // Checking format: It returns 'irrigation_schedule': {'stage': {'frequency_days': X, 'water_mm': Y}}
+    // Need to handle Map or List. Knowledge base returns Map.
+    
+    final schedMap = irrData['irrigation_schedule'];
+    if (schedMap is Map) {
+      schedMap.forEach((stage, details) {
+        schedule.add(IrrigationStage(
+          stage: stage,
+          frequency: "Every ${details['frequency_days']} days",
+          amount: "${details['water_mm']} mm",
+        ));
+      });
+    }
+
+    return IrrigationScheduleSection(
+      schedule: schedule,
+      waterRequirement: "Based on soil and weather",
+    );
+  }
+
+  static DiseaseProbabilitySection _mapDisease(Map<String, dynamic> diseaseData) {
+    // If specific analysis exists (from symptoms)
+    // If generic info, layout common diseases
+    // For now, map generic common diseases if available
+    return DiseaseProbabilitySection(timeline: [], preventiveMeasures: ["Monitor regularly"]);
+  }
+
+  static HarvestSection _mapHarvest(Map<String, dynamic> harvestData) {
+    return HarvestSection(
+      expectedHarvestDate: harvestData['predicted_harvest_date'] ?? '',
+      yieldPrediction: harvestData['estimated_yield'] != null ? "${harvestData['estimated_yield']['quantity']} ${harvestData['estimated_yield']['unit']}" : '',
+      harvestIndicators: ["Check maturity indices"],
+    );
+  }
+
+  static StorageSection _mapStorage(Map<String, dynamic> priceData) {
+    return StorageSection(
+      storageMethod: "Dry Storage",
+      storageDuration: "N/A",
+      pricePrediction: priceData['forecast']?['trend'] ?? "Stable",
+      bestSellingTime: priceData['recommendation']?['action'] ?? "Monitor",
     );
   }
 }
@@ -145,10 +276,12 @@ class FertilizationSection {
   factory FertilizationSection.fromJson(Map<String, dynamic> json) {
     return FertilizationSection(
       schedule: (json['schedule'] as List?)
-          ?.map((e) => FertilizerApplication.fromJson(e))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => FertilizerApplication.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
       lowCostAlternatives: (json['lowCostAlternatives'] as List?)
-          ?.map((e) => LowCostAlternative.fromJson(e))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => LowCostAlternative.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
     );
   }
@@ -210,7 +343,8 @@ class IrrigationScheduleSection {
   factory IrrigationScheduleSection.fromJson(Map<String, dynamic> json) {
     return IrrigationScheduleSection(
       schedule: (json['schedule'] as List?)
-          ?.map((e) => IrrigationStage.fromJson(e))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => IrrigationStage.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
       waterRequirement: json['waterRequirement'] ?? '',
     );
@@ -250,7 +384,8 @@ class DiseaseProbabilitySection {
   factory DiseaseProbabilitySection.fromJson(Map<String, dynamic> json) {
     return DiseaseProbabilitySection(
       timeline: (json['timeline'] as List?)
-          ?.map((e) => DiseaseTimeline.fromJson(e))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => DiseaseTimeline.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
       preventiveMeasures: List<String>.from(json['preventiveMeasures'] ?? []),
     );
@@ -377,7 +512,8 @@ class DirectSellingSection {
   factory DirectSellingSection.fromJson(Map<String, dynamic> json) {
     return DirectSellingSection(
       platforms: (json['platforms'] as List?)
-          ?.map((e) => Platform.fromJson(e))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => Platform.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
       tips: List<String>.from(json['tips'] ?? []),
     );
@@ -438,7 +574,8 @@ class FertilizerCostSection {
   factory FertilizerCostSection.fromJson(Map<String, dynamic> json) {
     return FertilizerCostSection(
       comparison: (json['comparison'] as List?)
-          ?.map((e) => FertilizerCost.fromJson(e))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => FertilizerCost.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
       recommendations: json['recommendations'] ?? '',
     );

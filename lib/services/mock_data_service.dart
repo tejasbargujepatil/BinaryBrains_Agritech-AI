@@ -14,6 +14,7 @@ class MockDataService {
       humidity: 65.0,
       windSpeed: 12.0,
       rainProbability: 30.0,
+      location: 'Pune, MH (Demo)', // Added
       timestamp: DateTime.now(),
     );
   }
@@ -23,10 +24,11 @@ class MockDataService {
     return SoilModel(
       soilType: 'Black Soil (Regur)',
       ph: 7.2,
-      nitrogen: 285.0,
+      nitrogen: 285.0, // Double is fine, Model accepts dynamic
       phosphorus: 45.0,
       potassium: 320.0,
       moisture: 35.0,
+      organicCarbon: '0.75%', // Added
       timestamp: DateTime.now(),
     );
   }

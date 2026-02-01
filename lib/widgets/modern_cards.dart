@@ -193,6 +193,7 @@ class CropCard extends StatelessWidget {
   final String healthStatus;
   final String? imagePath;
   final VoidCallback? onTap;
+  final VoidCallback? onDelete;
   
   const CropCard({
     super.key,
@@ -203,6 +204,7 @@ class CropCard extends StatelessWidget {
     required this.healthStatus,
     this.imagePath,
     this.onTap,
+    this.onDelete,
   });
   
   @override
@@ -213,22 +215,39 @@ class CropCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Crop Image or Icon
-          Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppTheme.veryLightGreen,
-              borderRadius: AppTheme.mediumRadius,
-            ),
-            child: Center(
-              child: imagePath != null
-                  ? Image.asset(imagePath!, height: 80)
-                  : Icon(
-                      _getCropIcon(cropName),
-                      size: 64,
-                      color: AppTheme.primaryGreen,
-                    ),
-            ),
+          // Header: Image/Icon and Delete Button
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppTheme.veryLightGreen,
+                    borderRadius: AppTheme.mediumRadius,
+                  ),
+                  child: Center(
+                    child: imagePath != null
+                        ? Image.asset(imagePath!, height: 80)
+                        : Icon(
+                            _getCropIcon(cropName),
+                            size: 64,
+                            color: AppTheme.primaryGreen,
+                          ),
+                  ),
+                ),
+              ),
+              if (onDelete != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    onPressed: onDelete,
+                    tooltip: 'Remove',
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+            ],
           ),
           
           const SizedBox(height: AppTheme.spacingMd),
@@ -431,9 +450,9 @@ class StatCard extends StatelessWidget {
 class SoilHealthCard extends StatelessWidget {
   final String soilType;
   final double ph;
-  final double nitrogen;
-  final double phosphorus;
-  final double potassium;
+  final dynamic nitrogen; // Changed from double to dynamic
+  final dynamic phosphorus; // Changed from double to dynamic
+  final dynamic potassium; // Changed from double to dynamic
   final VoidCallback? onTap;
   
   const SoilHealthCard({
@@ -480,13 +499,13 @@ class SoilHealthCard extends StatelessWidget {
                 child: _buildNPKIndicator('pH', ph.toStringAsFixed(1), AppTheme.info),
               ),
               Expanded(
-                child: _buildNPKIndicator('N', nitrogen.toInt().toString(), AppTheme.success),
+                child: _buildNPKIndicator('N', _formatValue(nitrogen), AppTheme.success),
               ),
               Expanded(
-                child: _buildNPKIndicator('P', phosphorus.toInt().toString(), AppTheme.warning),
+                child: _buildNPKIndicator('P', _formatValue(phosphorus), AppTheme.warning),
               ),
               Expanded(
-                child: _buildNPKIndicator('K', potassium.toInt().toString(), AppTheme.error),
+                child: _buildNPKIndicator('K', _formatValue(potassium), AppTheme.error),
               ),
             ],
           ),
@@ -523,5 +542,12 @@ class SoilHealthCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+
+  String _formatValue(dynamic value) {
+    if (value is String) return value;
+    if (value is num) return value.toInt().toString();
+    return 'N/A';
   }
 }

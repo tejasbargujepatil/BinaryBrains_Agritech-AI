@@ -137,7 +137,8 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.keyUserData, jsonEncode(userData));
     if (userData['id'] != null || userData['_id'] != null) {
-      await prefs.setString(AppConstants.keyUserId, userData['id'] ?? userData['_id']);
+      final userId = (userData['id'] ?? userData['_id']).toString();
+      await prefs.setString(AppConstants.keyUserId, userId);
     }
   }
   

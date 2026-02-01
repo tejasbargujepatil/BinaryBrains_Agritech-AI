@@ -1,17 +1,67 @@
-# krishi_mitra
+# 🌾 KrishiMitra: AI-Powered Smart Farming Assistant
 
-A new Flutter project.
+**KrishiMitra** (Friend of the Farmer) is a comprehensive digital platform designed to revolutionize agriculture through Artificial Intelligence. It connects farmers with real-time data, market insights, and personalized agronomy advice.
 
-## Getting Started
+![KrishiMitra Banner](https://via.placeholder.com/1200x400?text=KrishiMitra+AI+Tech)
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🌟 Project Overview
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+This repository contains the full source code for the unified KrishiMitra ecosystem:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# BinaryBrains_Agritech-AI
+1.  **📱 Mobile Application (Frontend)**: A Flutter-based cross-platform app providing an intuitive interface for farmers.
+2.  **🧠 Intelligence Node (Backend)**: A FastAPI-based server handling data synthesis, AI reasoning, and secure transactions.
+
+### Core Capabilities
+- **Real-time Monitoring**: Live Weather and Soil health tracking using Geolocation.
+- **AI Agronomist**: 24/7 Chatbot and automated crop planning agent.
+- **Smart Marketplace**: Integrated Mandi prices (Agmarknet) with profitability analysis.
+- **Preventive Alerts**: Early warning system for pests and diseases.
+
+---
+
+## 📚 Documentation
+
+Detailed documentation for each component is available in the `docs/` directory:
+
+- [**Frontend Guide**](docs/FRONTEND_GUIDE.md): Setup and architecture of the Flutter App.
+- [**Backend Guide**](docs/BACKEND_GUIDE.md): Deployment and API reference for the Python Backend.
+
+---
+
+## 🏁 Quick Start
+
+### 1. Backend Setup
+The backend is required for Auth and AI features.
+```bash
+cd KrishiMitra-backend
+# See docs/BACKEND_GUIDE.md for Docker or Local setup
+docker-compose up -d
+```
+
+### 2. Frontend Setup
+```bash
+# Ensure you are in root directory
+flutter pub get
+flutter run
+```
+
+---
+
+## 🤝 Contribution
+
+We welcome contributions! Please follow these steps:
+1.  Fork the repository.
+2.  Create a feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes.
+4.  Open a Pull Request.
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+*Built with ❤️ for Indian Agriculture.*

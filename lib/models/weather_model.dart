@@ -6,6 +6,7 @@ class WeatherModel {
   final double? windSpeed;
   final String condition; // sunny, rainy, cloudy, etc.
   final String? iconCode;
+  final String location; // Added location field
   final DateTime timestamp;
   
   WeatherModel({
@@ -16,6 +17,7 @@ class WeatherModel {
     this.windSpeed,
     required this.condition,
     this.iconCode,
+    required this.location,
     required this.timestamp,
   });
   
@@ -28,6 +30,7 @@ class WeatherModel {
       windSpeed: json['windSpeed'] != null ? json['windSpeed'].toDouble() : null,
       condition: json['condition'] ?? 'unknown',
       iconCode: json['iconCode'] ?? json['icon'],
+      location: json['location'] ?? json['name'] ?? 'Unknown',
       timestamp: json['timestamp'] != null 
           ? DateTime.parse(json['timestamp']) 
           : DateTime.now(),
@@ -43,6 +46,7 @@ class WeatherModel {
       'windSpeed': windSpeed,
       'condition': condition,
       'iconCode': iconCode,
+      'location': location,
       'timestamp': timestamp.toIso8601String(),
     };
   }

@@ -19,7 +19,7 @@ class CropService {
     try {
       final headers = await AuthService.getAuthHeaders();
       final response = await http.get(
-        Uri.parse(ApiConfig.buildUrl(ApiConfig.crops)),
+        Uri.parse(ApiConfig.buildUrl(ApiConfig.getCrops)),
         headers: headers,
       ).timeout(Duration(seconds: AppConstants.requestTimeout));
       
@@ -35,6 +35,44 @@ class CropService {
       }
     } catch (e) {
       return {'success': false, 'error': e.toString()};
+    }
+  }
+  
+  // AI Auto-plan best crop for farmer
+  static Future<Map<String, dynamic>> autoPlanCrop({
+    Map<String, dynamic>? soilData,
+    Map<String, dynamic>? preferences,
+  }) async {
+    try {
+      final headers = await AuthService.getAuthHeaders();
+      final response = await http.post(
+        Uri.parse(ApiConfig.buildUrl(ApiConfig.autoPlanCrop)),
+        headers: headers,
+        body: jsonEncode({
+          'soil_data': soilData ?? {},
+          'preferences': preferences ?? {},
+        }),
+      ).timeout(Duration(seconds: AppConstants.requestTimeout));
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'success': true,
+          'recommendations': data['recommendations'],
+          'message': data['message'],
+        };
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'error': error['message'] ?? 'Failed to get crop recommendations',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     }
   }
   
@@ -58,11 +96,11 @@ class CropService {
         Uri.parse(ApiConfig.buildUrl(ApiConfig.addCrop)),
         headers: headers,
         body: jsonEncode({
-          'cropName': cropName,
-          'sowingDate': sowingDate.toIso8601String(),
-          'landArea': landArea,
-          'irrigationType': irrigationType,
-          'cropVariety': cropVariety,
+          'crop_name': cropName,
+          'sowing_date': sowingDate.toIso8601String(),
+          'land_area': landArea,
+          'irrigation_type': irrigationType,
+          'crop_variety': cropVariety,
         }),
       ).timeout(Duration(seconds: AppConstants.requestTimeout));
       

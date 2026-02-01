@@ -8,31 +8,42 @@ import 'auth_service.dart';
 import 'mock_data_service.dart';
 
 class WeatherService {
-  // Get current weather
+  // Get current weather (Direct OpenWeatherMap)
   static Future<Map<String, dynamic>> getCurrentWeather(
     double latitude,
     double longitude,
   ) async {
     try {
-      final headers = await AuthService.getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(ApiConfig.buildUrl(
-          ApiConfig.weatherByLocation(latitude, longitude),
-        )),
-        headers: headers,
-      ).timeout(Duration(seconds: AppConstants.requestTimeout));
+      final apiKey = ApiConfig.openWeatherMapApiKey;
+      final url = "${ApiConfig.openWeatherMapBaseUrl}/weather?lat=$latitude&lon=$longitude&appid=$apiKey&units=metric";
+      
+      print('DEBUG: Fetching Weather from: $url');
+      
+      final response = await http.get(Uri.parse(url)).timeout(
+        const Duration(seconds: AppConstants.requestTimeout),
+      );
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        // Map OWM response to WeatherModel
         return {
           'success': true,
-          'weather': WeatherModel.fromJson(data['weather']),
+          'weather': WeatherModel(
+            temperature: (data['main']['temp'] as num).toDouble(),
+            condition: (data['weather'] as List).isNotEmpty ? data['weather'][0]['main'] : 'Clear',
+            humidity: (data['main']['humidity'] as num).toDouble(),
+            windSpeed: (data['wind']['speed'] as num).toDouble(),
+            rainProbability: 0.0, // OWM Current API doesn't provide POP, requires OneCall
+            location: data['name'] ?? 'Unknown',
+            timestamp: DateTime.now(),
+          ),
         };
       } else {
-        final error = jsonDecode(response.body);
-        return {'success': false, 'error': error['message'] ?? 'Failed to fetch weather'};
+        print('OWM Error: ${response.statusCode}');
+        return {'success': false, 'error': 'Failed to fetch weather: ${response.body}'};
       }
     } catch (e) {
+      print('WeatherService Exception: $e');
       return {'success': false, 'error': e.toString()};
     }
   }

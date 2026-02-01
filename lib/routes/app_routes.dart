@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/auth/splash_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
-import '../screens/home/home_screen.dart';
+
 import'../screens/home/new_home_screen.dart';
 import '../screens/main_app_scaffold.dart';
 import '../screens/crops/add_crop_screen.dart';
