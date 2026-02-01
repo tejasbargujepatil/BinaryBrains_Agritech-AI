@@ -592,12 +592,6 @@ Each agent uses specialized prompts:
 
 ### Environment Variables
 
-**Frontend (.env)**
-```
-OPENWEATHER_API_KEY=<key>
-GEMINI_API_KEY=<key>
-DEMO_MODE=false
-```
 
 **Backend (.env)**
 ```
